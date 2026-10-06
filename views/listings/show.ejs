@@ -3,7 +3,7 @@
   <%- JSON.stringify(listing) %>
 </script>
 <script>
-  const mapToken = "<%= process.env.MAP_TOKEN %>";
+  const mapToken = <%- JSON.stringify(process.env.MAP_TOKEN || "") %>;
   const listing = JSON.parse(document.getElementById("listing-data").textContent);
 </script>
 
