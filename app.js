@@ -1,6 +1,4 @@
-if(process.env.NODE_ENV != "production") {
-    require("dotenv").config();
-}
+require("dotenv").config();
 
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
@@ -23,10 +21,20 @@ const listingsROuter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
-const dbUrl = process.env.MONGO_URL || process.env.ATLASDB_URL;
+const dbUrl = process.env.ATLASDB_URL || process.env.MONGO_URL || process.env.MONGO_URI;
 
-async function main() {
-    await mongoose.connect(dbUrl);
+async function connectToDatabase() {
+    if (!dbUrl) {
+        throw new Error("MongoDB connection string is missing. Set ATLASDB_URL (or MONGO_URL/MONGO_URI) in your environment.");
+    }
+
+    try {
+        await mongoose.connect(dbUrl);
+        console.log("MongoDB connected successfully.");
+    } catch (error) {
+        console.error("MongoDB connection failed:", error.message);
+        throw error;
+    }
 }
 
 app.set("view engine" ,"ejs");
@@ -106,13 +114,13 @@ app.use((err, req, res, next) => {
 
 const port = process.env.PORT || 8080;
 
-main()
+connectToDatabase()
     .then(() => {
-        console.log("connected to DB");
         app.listen(port, () => {
             console.log(`Server is running on port ${port}`);
         });
     })
     .catch((err) => {
-        console.log(err);
+        console.error("Application startup aborted because the database connection could not be established.");
+        process.exitCode = 1;
     });
